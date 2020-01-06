@@ -7,7 +7,11 @@ import { map, shareReplay } from "rxjs/operators";
 
 // AngularFire
 import { AngularFireAuth } from "@angular/fire/auth";
-import { AngularFirestore } from "angularfire2/firestore";
+import {
+  AngularFirestore,
+  AngularFirestoreCollection,
+  AngularFirestoreDocument
+} from "angularfire2/firestore";
 
 interface Entry {
   id: string;
@@ -32,10 +36,6 @@ interface Entry {
   styleUrls: ["./header.component.scss"]
 })
 export class HeaderComponent {
-  // Angular Generated Navbar
-
-  isAdmin: string = "false";
-
   isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)
     .pipe(
@@ -46,17 +46,28 @@ export class HeaderComponent {
   constructor(
     private breakpointObserver: BreakpointObserver,
     public afAuth: AngularFireAuth,
-    public firestore: AngularFirestore
+    public afs: AngularFirestore
   ) {}
 
   ngOnInit() {
-    setTimeout(() => this.afterngOnInit(), 1000);
+    // Wait 2 seconds to initialize firebase
+    setTimeout(() => this.afterngOnInit(), 2000);
   }
+
+  entryDoc: AngularFirestoreDocument<Entry>;
+  entry: Observable<Entry>;
+  isAdmin: string = "false"; // "true" or "false"
 
   afterngOnInit() {
     let user: firebase.User = this.afAuth.auth.currentUser;
     let uid: any = user.uid;
-    console.log(uid);
-    this.firestore.collection("entries").get(uid);
+
+    this.entryDoc = this.afs.doc("entries/" + uid);
+    this.entry = this.entryDoc.valueChanges();
+
+    // behaves asynchronously
+    this.entry.subscribe(myEntry => {
+      this.isAdmin = myEntry.isAdmin;
+    });
   }
 }
